@@ -1,0 +1,96 @@
+#!/bin/sh
+# Configure script for manimR
+# Handles optional compilation of Rust backend
+
+echo "Configuring manimR..."
+
+# Check for Rcpp (required for C++ backend)
+if [ -z "$R_HOME" ]; then
+  R_HOME=$(R RHOME)
+fi
+
+# Test if we can compile C++
+RCPP_AVAILABLE=false
+echo "#include <Rcpp.h>" > /tmp/test_rcpp.cpp
+echo "void dummy() {}" >> /tmp/test_rcpp.cpp
+if ${CXX} -I"$R_HOME/include" -c /tmp/test_rcpp.cpp -o /tmp/test_rcpp.o 2>/dev/null; then
+  RCPP_AVAILABLE=true
+  echo "C++ compiler available"
+else
+  echo "C++ compiler not available - C++ backend disabled"
+fi
+rm -f /tmp/test_rcpp.cpp /tmp/test_rcpp.o
+
+# Check for Rust (optional)
+RUST_AVAILABLE=false
+if command -v rustc >/dev/null 2>&1; then
+  if command -v cargo >/dev/null 2>&1; then
+    RUST_AVAILABLE=true
+    echo "Rust toolchain available"
+  fi
+fi
+
+# Check for rextendr
+REXTENDR_AVAILABLE=false
+if $R_HOME/bin/Rscript -e "library(rextendr)" 2>/dev/null; then
+  REXTENDR_AVAILABLE=true
+  echo "rextendr package available"
+fi
+
+# Determine which backends to enable
+echo ""
+echo "Backend configuration:"
+echo "  C++ (Rcpp): $RCPP_AVAILABLE"
+echo "  Rust (extendr): $RUST_AVAILABLE && $REXTENDR_AVAILABLE"
+echo ""
+
+# Create Makevars.site if needed for custom configuration
+if [ -f "src/Makevars" ]; then
+  # Ensure OpenMP flags are set
+  if [ -z "$SHLIB_OPENMP_CXXFLAGS" ]; then
+    # Try to detect OpenMP support
+    echo "#include <omp.h>" > /tmp/test_omp.cpp
+    echo "void dummy() {}" >> /tmp/test_omp.cpp
+    if ${CXX} -fopenmp -c /tmp/test_omp.cpp -o /tmp/test_omp.o 2>/dev/null; then
+      echo "OpenMP detected"
+      OPENMP_FLAGS="-fopenmp"
+    elif ${CXX} -Xpreprocessor -fopenmp -c /tmp/test_omp.cpp -o /tmp/test_omp.o 2>/dev/null; then
+      echo "OpenMP detected (macOS style)"
+      OPENMP_FLAGS="-Xpreprocessor -fopenmp"
+    else
+      echo "OpenMP not available - parallel processing disabled"
+      OPENMP_FLAGS=""
+    fi
+    rm -f /tmp/test_omp.cpp /tmp/test_omp.o
+  fi
+fi
+
+# Configure Rust backend if available
+if [ "$RUST_AVAILABLE" = true ] && [ "$REXTENDR_AVAILABLE" = true ]; then
+  if [ -d "src/rust" ]; then
+    echo "Configuring Rust backend..."
+    cd src/rust
+
+    # Build Rust library
+    if cargo build --release 2>/dev/null; then
+      echo "Rust backend built successfully"
+
+      # Copy library to expected location
+      if [ -f "target/release/libmanimR_rust.dylib" ]; then
+        cp target/release/libmanimR_rust.dylib ../manimR_rust.so
+      elif [ -f "target/release/libmanimR_rust.so" ]; then
+        cp target/release/libmanimR_rust.so ../manimR_rust.so
+      fi
+    else
+      echo "Note: optional Rust backend not built; using C++ backend only"
+    fi
+
+    cd ../..
+  fi
+fi
+
+echo "Configuration complete."
+echo ""
+echo "To build with full acceleration:"
+echo "  - C++: Ensure you have a C++17 compiler"
+echo "  - Rust: Install Rust and rextendr package"

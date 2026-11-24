@@ -1,0 +1,39 @@
+[package]
+name = "manimR-rust"
+version = "0.1.0"
+edition = "2021"
+authors = ["manimR contributors"]
+description = "Rust backend for manimR - mathematical animation engine"
+license = "MIT"
+repository = "https://github.com/Reyanda/manimR"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+name = "manimR_rust"
+
+[dependencies]
+extendr-api = "0.7"
+rayon = "1.10"          # Parallelism
+nalgebra = "0.33"       # Linear algebra
+palette = "0.7"         # Color operations
+thiserror = "2.0"       # Error handling
+serde = { version = "1.0", features = ["derive"] }
+lazy_static = "1.5"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "easing_benchmark"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true

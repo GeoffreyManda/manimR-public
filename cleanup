@@ -1,0 +1,21 @@
+#!/bin/sh
+# Cleanup script for manimR
+
+echo "Cleaning up manimR build files..."
+
+# Remove object files
+rm -f src/*.o
+rm -f src/*.so
+rm -f src/*.dll
+
+# Remove Rust build artifacts
+if [ -d "src/rust/target" ]; then
+  rm -rf src/rust/target
+fi
+rm -f src/manimR_rust.so
+
+# Remove Makevars variants
+rm -f src/Makevars.win
+rm -f src/Makevars.user
+
+echo "Cleanup complete."
