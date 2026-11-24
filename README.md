@@ -1,17 +1,28 @@
 # manimR
 
-Public source variant of the manimR R package.
+Mathematical animations in R.
 
-Provides mathematical animation objects, scenes and renderers in R. LaTeX rendering requires a working TeX installation and dvisvgm; those capabilities are optional.
+## Install
 
-## Installation
+```r
+install.packages("remotes")
+remotes::install_github("GeoffreyManda/manimR-public")
+```
 
-Install with `remotes::install_github("GeoffreyManda/manimR-public")`, or use `R CMD INSTALL` on the source after installing the dependencies declared in `DESCRIPTION`.
+See the [getting started guide](docs/getting-started.md) for system requirements, a worked example, output interpretation and troubleshooting.
 
-## Licence and credits
+## Run the example
 
-The original licence and contributor notices are retained in the package metadata and licence files.
+```r
+source(system.file("examples", "worked-example.R", package = "manimR"))
+```
 
-## Validation
+The example uses synthetic inputs and cleans up its temporary output. Its source is [inst/examples/worked-example.R](inst/examples/worked-example.R).
 
-The package compiled its C++ backend from source and passed its local tests on 24 November 2026. Four optional rendering tests were skipped because TeX or dvisvgm was unavailable. LaTeX expressions use the documented text fallback when TeX is absent.
+## Checks
+
+[GitHub Actions](https://github.com/GeoffreyManda/manimR-public/actions/workflows/package-checks.yaml) installs the package, runs the installed tests and executes the example on Ubuntu with the current R release.
+
+## Licence and contributors
+
+Original licence and contributor notices are retained in `DESCRIPTION` and the licence files.
